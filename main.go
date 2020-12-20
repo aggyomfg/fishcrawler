@@ -44,6 +44,11 @@ func main() {
 			os.Exit(0)
 		case input.Text() == "выход":
 			os.Exit(0)
+		case input.Text() == "":
+			{
+				fmt.Println("нечего искать! :(")
+				continue
+			}
 		}
 		searchQuery = input.Text()
 		geziyor.NewGeziyor(&geziyor.Options{
