@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -17,6 +16,10 @@ import (
 	"github.com/geziyor/geziyor/client"
 	"github.com/iotdog/json2table/j2t"
 	"golang.org/x/text/encoding/charmap"
+)
+
+const (
+	fisheryURL = "http://fishery.ru"
 )
 
 var (
@@ -32,6 +35,7 @@ type fishSearchCard struct {
 	Phones    string `json:"phones"`
 	Emails    string `json:"emails"`
 	TextMatch string `json:"text"`
+	Link      string `json:"link"`
 }
 
 func main() {
@@ -63,7 +67,7 @@ func main() {
 
 func searchURLPages(pages int) (result []string) {
 	for i := 1; i <= pages; i++ {
-		result = append(result, "http://fishery.ru/board?page="+strconv.Itoa(i)+"?s="+url.QueryEscape(encodeWindows1251(searchQuery)))
+		result = append(result, "http://fishery.ru/board?page="+strconv.Itoa(i)+"&&s="+encodeWindows1251(searchQuery))
 	}
 	return result
 }
@@ -87,6 +91,11 @@ func parseFishSearch(g *geziyor.Geziyor, r *client.Response) {
 		reformatedPhone := strings.Replace(decodePhone, "<br/>", "\n", -1)
 
 		currentSearch.Name = decodeWindows1251(s.Find("div.name > div.n").Text())
+		printHref, ok := s.Find("div.name > span > a:nth-child(5)").Attr("href")
+		if !ok {
+			fmt.Println("cant get link")
+		}
+		currentSearch.Link = fisheryURL + decodeWindows1251(printHref)
 
 		currentSearch.Date = decodeWindows1251(s.Find("div.name > span > span").Text())[:16]
 
@@ -124,7 +133,7 @@ func toCSV() {
 		fmt.Println(err)
 		return
 	}
-	headers := []string{"id", "date", "name", "phones", "email", "text"}
+	headers := []string{"id", "date", "name", "phones", "email", "text", "link"}
 	writer.Write(headers)
 	for _, searchRes := range searchResult {
 		var row []string
@@ -134,6 +143,7 @@ func toCSV() {
 		row = append(row, searchRes.Phones)
 		row = append(row, searchRes.Emails)
 		row = append(row, searchRes.TextMatch)
+		row = append(row, searchRes.Link)
 		writer.Write(row)
 	}
 	writer.Flush()
