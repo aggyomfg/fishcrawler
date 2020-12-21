@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -61,13 +62,15 @@ func main() {
 		}).Start()
 		toCSV()
 		fmt.Println(strings.Replace(emailsTotal, "\n", ",", -1))
+		searchResult = []fishSearchCard{}
+		emailsTotal = ""
 	}
 
 }
 
 func searchURLPages(pages int) (result []string) {
 	for i := 1; i <= pages; i++ {
-		result = append(result, "http://fishery.ru/board?page="+strconv.Itoa(i)+"&&s="+encodeWindows1251(searchQuery))
+		result = append(result, "http://fishery.ru/board?page="+strconv.Itoa(i)+"&&s="+escapeWindows1251(searchQuery))
 	}
 	return result
 }
@@ -194,6 +197,10 @@ func encodeWindows1251(str string) string {
 	enc := charmap.Windows1251.NewEncoder()
 	out, _ := enc.String(str)
 	return out
+}
+
+func escapeWindows1251(str string) string {
+	return url.QueryEscape(encodeWindows1251(str))
 }
 
 func decodeWindows1251(str string) string {
